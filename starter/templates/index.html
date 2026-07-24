@@ -7,12 +7,44 @@
 </head>
 <body>
   <h1>Sudoku Game</h1>
-  <div id="sudoku-board"></div>
+  <div id="sudoku-board" role="grid" aria-label="Sudoku board"></div>
   <div class="controls">
+    <div class="control-group">
+      <label for="difficulty-select">Difficulty</label>
+      <select id="difficulty-select" name="difficulty" aria-label="Choose difficulty level">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+    </div>
     <button id="new-game">New Game</button>
-    <button id="check-solution">Check Solution</button>
-    <span id="message"></span>
+    <button id="hint-button">Hint</button>
+    <button id="check-puzzle">Check Puzzle</button>
+    <button id="theme-toggle" aria-pressed="false">Dark Mode</button>
+    <div class="timer-display" aria-live="polite">
+      Time: <span id="timer">00:00</span>
+    </div>
+    <div class="hint-counter" aria-live="polite">
+      Hints used: <span id="hints-used">0</span>
+    </div>
+    <span id="message" role="status" aria-live="polite"></span>
   </div>
+  <section id="leaderboard" class="leaderboard" aria-label="Top 10 Fastest Times">
+    <h2>Top 10 Fastest Times</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Name</th>
+          <th>Time</th>
+          <th>Difficulty</th>
+          <th>Hints</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body"></tbody>
+    </table>
+    <p id="leaderboard-empty" class="leaderboard-empty">No finished games yet. Complete a puzzle to add your score.</p>
+  </section>
   <script src="/static/main.js"></script>
 </body>
 </html>
