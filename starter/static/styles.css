@@ -10,8 +10,8 @@
     --button-hover: #1565c0;
     --input-bg: #fafafa;
     --input-border: #bbbbbb;
-    --cell-bg: #fafafa;
-    --cell-alt-bg: #e8eaf6;
+    --cell-region-bg-0: #fafafa;
+    --cell-region-bg-1: #e8eaf6;
     --cell-focus-bg: #e0f7fa;
     --prefilled-bg: #d7d7d7;
     --prefilled-text: #111111;
@@ -40,8 +40,8 @@ body.dark-mode {
     --button-hover: #64b5f6;
     --input-bg: #1c1c1c;
     --input-border: #555555;
-    --cell-bg: #1e1e1e;
-    --cell-alt-bg: #2a2a2a;
+    --cell-region-bg-0: #1e1e1e;
+    --cell-region-bg-1: #2a2a2a;
     --cell-focus-bg: #004d40;
     --prefilled-bg: #424242;
     --prefilled-text: #e0e0e0;
@@ -91,13 +91,13 @@ h1 {
     text-align: center;
     font-size: 20px;
     outline: none;
-    background: var(--cell-bg);
+    background: var(--cell-region-bg-0);
     color: var(--text);
     transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
-.sudoku-cell.block-alt {
-    background: var(--cell-alt-bg);
+.sudoku-cell.box-alt {
+    background: var(--cell-region-bg-1);
 }
 
 .sudoku-cell:focus {

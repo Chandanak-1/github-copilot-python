@@ -2,12 +2,17 @@
 const SIZE = 9;
 const LEADERBOARD_STORAGE_KEY = 'sudokuLeaderboard';
 const THEME_STORAGE_KEY = 'sudokuThemePreference';
+const BOX_ALT_CLASS = 'box-alt';
 let puzzle = [];
 let hintsUsed = 0;
 let timerInterval = null;
 let elapsedSeconds = 0;
 let currentDifficulty = 'medium';
 let leaderboardUpdatedThisGame = false;
+
+function isBoxAlt(row, col) {
+  return ((Math.floor(row / 3) + Math.floor(col / 3)) % 2) === 0;
+}
 
 function createBoardElement() {
   const boardDiv = document.getElementById('sudoku-board');
@@ -21,8 +26,8 @@ function createBoardElement() {
       input.inputMode = 'numeric';
       input.maxLength = 1;
       input.className = 'sudoku-cell';
-      if ((Math.floor(i / 3) + Math.floor(j / 3)) % 2 === 0) {
-        input.classList.add('block-alt');
+      if (isBoxAlt(i, j)) {
+        input.classList.add(BOX_ALT_CLASS);
       }
       input.dataset.row = i;
       input.dataset.col = j;
@@ -192,8 +197,8 @@ function renderPuzzle(puz) {
       const val = puzzle[i][j];
       const inp = inputs[idx];
       inp.className = 'sudoku-cell';
-      if ((Math.floor(i / 3) + Math.floor(j / 3)) % 2 === 0) {
-        inp.classList.add('block-alt');
+      if (isBoxAlt(i, j)) {
+        inp.classList.add(BOX_ALT_CLASS);
       }
       inp.removeAttribute('aria-readonly');
       inp.removeAttribute('aria-disabled');
@@ -323,8 +328,8 @@ async function requestHint() {
   inp.setAttribute('aria-disabled', 'true');
   inp.dataset.prefilled = 'true';
   inp.className = 'sudoku-cell';
-  if ((Math.floor(row / 3) + Math.floor(col / 3)) % 2 === 0) {
-    inp.classList.add('block-alt');
+  if (isBoxAlt(row, col)) {
+    inp.classList.add(BOX_ALT_CLASS);
   }
   inp.classList.add('prefilled', 'hinted');
   hintsUsed = data.hints;
