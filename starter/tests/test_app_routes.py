@@ -13,6 +13,25 @@ def test_index_route_returns_html():
     assert b'<html' in response.data
 
 
+def test_index_route_contains_timer_display():
+    client = app.test_client()
+    response = client.get('/')
+
+    assert response.status_code == 200
+    assert b'id="timer"' in response.data
+    assert b'Time:' in response.data
+    assert b'00:00' in response.data
+
+
+def test_index_route_includes_theme_toggle():
+    client = app.test_client()
+    response = client.get('/')
+
+    assert response.status_code == 200
+    assert b'id="theme-toggle"' in response.data
+    assert b'Dark Mode' in response.data
+
+
 def test_new_game_route_returns_puzzle_and_sets_current_solution():
     sudoku_logic.random.seed(2)
     client = app.test_client()
