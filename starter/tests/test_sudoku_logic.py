@@ -119,3 +119,27 @@ def test_generate_puzzle_with_hard_difficulty():
     assert 28 <= clue_count <= 31
     assert sudoku_logic.count_solutions(puzzle, max_solutions=2) == 1
     assert is_valid_sudoku(solution)
+
+
+def test_find_conflicting_cells_reports_row_col_and_region_conflicts():
+    board = sudoku_logic.create_empty_board()
+    board[0][0] = 1
+    board[0][1] = 1
+    board[1][0] = 1
+    board[2][2] = 1
+
+    conflicts = sudoku_logic.find_conflicting_cells(board, 0, 2, 1)
+
+    assert {(row, col) for row, col in conflicts} == {(0, 0), (0, 1), (1, 0), (2, 2)}
+
+
+def test_find_conflicting_cells_returns_empty_when_entry_is_safe():
+    board = sudoku_logic.create_empty_board()
+    board[0][0] = 1
+    board[0][1] = 2
+    board[1][0] = 3
+    board[2][2] = 4
+
+    conflicts = sudoku_logic.find_conflicting_cells(board, 0, 2, 5)
+
+    assert conflicts == []

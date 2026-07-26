@@ -258,3 +258,37 @@ def test_check_solution_route_incomplete_board_is_not_solved():
     payload = response.get_json()
     assert payload['incorrect'] == []
     assert payload['complete'] is False
+
+
+def test_validate_entry_route_reports_all_conflicting_cells():
+    client = app.test_client()
+    board = sudoku_logic.create_empty_board()
+    board[0][0] = 1
+    board[0][1] = 1
+    board[1][0] = 1
+    board[2][2] = 1
+
+    response = client.post('/validate-entry', json={'board': board, 'row': 0, 'col': 2, 'value': 1})
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert {(row, col) for row, col in payload['conflicts']} == {(0, 0), (0, 1), (1, 0), (2, 2)}
+
+
+def test_validate_entry_route_clears_conflicts_when_value_is_corrected():
+    client = app.test_client()
+    board = sudoku_logic.create_empty_board()
+    board[0][0] = 1
+    board[0][1] = 1
+    board[1][0] = 1
+    board[2][2] = 1
+
+    response = client.post('/validate-entry', json={'board': board, 'row': 0, 'col': 2, 'value': 1})
+    assert response.status_code == 200
+    assert response.get_json()['conflicts']
+
+    board[0][2] = 2
+    response = client.post('/validate-entry', json={'board': board, 'row': 0, 'col': 2, 'value': 2})
+
+    assert response.status_code == 200
+    assert response.get_json()['conflicts'] == []

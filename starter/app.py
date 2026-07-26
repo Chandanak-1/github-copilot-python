@@ -57,6 +57,28 @@ def hint_cell():
 
     return jsonify({'error': 'No empty cells available for hint'}), 400
 
+@app.route('/validate-entry', methods=['POST'])
+def validate_entry():
+    data = request.json or {}
+    board = data.get('board')
+    row = data.get('row')
+    col = data.get('col')
+    value = data.get('value')
+
+    if board is None or row is None or col is None or value is None:
+        return jsonify({'error': 'Board, row, col, and value are required'}), 400
+
+    try:
+        row_index = int(row)
+        col_index = int(col)
+        value_int = int(value)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Invalid row, col, or value'}), 400
+
+    conflicts = sudoku_logic.find_conflicting_cells(board, row_index, col_index, value_int)
+    return jsonify({'conflicts': conflicts})
+
+
 @app.route('/check', methods=['POST'])
 def check_solution():
     data = request.json

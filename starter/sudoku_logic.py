@@ -40,6 +40,37 @@ def find_empty_cell(board):
                 return row, col
     return None, None
 
+
+def find_conflicting_cells(board, row, col, value):
+    if value == EMPTY:
+        return []
+
+    conflicts = []
+    seen = set()
+
+    def add_conflict(r, c):
+        if (r, c) != (row, col) and (r, c) not in seen:
+            seen.add((r, c))
+            conflicts.append((r, c))
+
+    for c in range(SIZE):
+        if c != col and board[row][c] == value:
+            add_conflict(row, c)
+
+    for r in range(SIZE):
+        if r != row and board[r][col] == value:
+            add_conflict(r, col)
+
+    start_row = row - row % 3
+    start_col = col - col % 3
+    for r in range(start_row, start_row + 3):
+        for c in range(start_col, start_col + 3):
+            if (r, c) != (row, col) and board[r][c] == value:
+                add_conflict(r, c)
+
+    return conflicts
+
+
 def get_candidates(board, row, col):
     return [num for num in range(1, SIZE + 1) if is_safe(board, row, col, num)]
 

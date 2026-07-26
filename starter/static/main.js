@@ -3,11 +3,16 @@ const SIZE = 9;
 const LEADERBOARD_STORAGE_KEY = 'sudokuLeaderboard';
 const THEME_STORAGE_KEY = 'sudokuThemePreference';
 let puzzle = [];
+let conflictPositions = new Set();
 let hintsUsed = 0;
 let timerInterval = null;
 let elapsedSeconds = 0;
 let currentDifficulty = 'medium';
 let leaderboardUpdatedThisGame = false;
+
+function getRegionIndex(row, col) {
+  return Math.floor(row / 3) * 3 + Math.floor(col / 3);
+}
 
 function createBoardElement() {
   const boardDiv = document.getElementById('sudoku-board');
@@ -21,15 +26,21 @@ function createBoardElement() {
       input.inputMode = 'numeric';
       input.maxLength = 1;
       input.className = 'sudoku-cell';
-      if ((Math.floor(i / 3) + Math.floor(j / 3)) % 2 === 0) {
-        input.classList.add('block-alt');
-      }
       input.dataset.row = i;
       input.dataset.col = j;
+      input.dataset.regionIndex = getRegionIndex(i, j);
       input.setAttribute('aria-label', `Row ${i + 1} column ${j + 1}`);
-      input.addEventListener('input', (e) => {
+      input.addEventListener('input', async (e) => {
         const val = e.target.value.replace(/[^1-9]/g, '');
         e.target.value = val;
+        if (e.target.disabled) {
+          return;
+        }
+        if (val === '') {
+          applyConflictHighlighting([]);
+          return;
+        }
+        await validateCurrentEntry(e.target);
       });
       rowDiv.appendChild(input);
     }
@@ -178,6 +189,63 @@ function startTimer() {
   }, 1000);
 }
 
+function getBoardFromInputs() {
+  const boardDiv = document.getElementById('sudoku-board');
+  const inputs = boardDiv.getElementsByTagName('input');
+  const board = [];
+  for (let i = 0; i < SIZE; i++) {
+    board[i] = [];
+    for (let j = 0; j < SIZE; j++) {
+      const idx = i * SIZE + j;
+      const val = inputs[idx].value;
+      board[i][j] = val ? parseInt(val, 10) : 0;
+    }
+  }
+  return board;
+}
+
+function applyConflictHighlighting(conflicts) {
+  conflictPositions = new Set(conflicts.map(([row, col]) => `${row}-${col}`));
+  const boardDiv = document.getElementById('sudoku-board');
+  if (!boardDiv) {
+    return;
+  }
+  const inputs = boardDiv.getElementsByTagName('input');
+  for (let idx = 0; idx < inputs.length; idx++) {
+    const inp = inputs[idx];
+    const key = `${inp.dataset.row}-${inp.dataset.col}`;
+    const isConflict = conflictPositions.has(key);
+    inp.classList.toggle('conflict', isConflict);
+    inp.toggleAttribute('aria-invalid', isConflict);
+  }
+}
+
+function clearConflictHighlighting() {
+  applyConflictHighlighting([]);
+}
+
+async function validateCurrentEntry(input) {
+  const board = getBoardFromInputs();
+  const row = Number(input.dataset.row);
+  const col = Number(input.dataset.col);
+  const value = input.value ? parseInt(input.value, 10) : 0;
+  const res = await fetch('/validate-entry', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({board, row, col, value})
+  });
+  const data = await res.json();
+  if (data.error) {
+    clearConflictHighlighting();
+    return;
+  }
+  const conflicts = (data.conflicts || []).map(([conflictRow, conflictCol]) => [conflictRow, conflictCol]);
+  if (conflicts.length > 0) {
+    conflicts.push([row, col]);
+  }
+  applyConflictHighlighting(conflicts);
+}
+
 function renderPuzzle(puz) {
   puzzle = puz;
   hintsUsed = 0;
@@ -192,13 +260,11 @@ function renderPuzzle(puz) {
       const val = puzzle[i][j];
       const inp = inputs[idx];
       inp.className = 'sudoku-cell';
-      if ((Math.floor(i / 3) + Math.floor(j / 3)) % 2 === 0) {
-        inp.classList.add('block-alt');
-      }
+      inp.dataset.regionIndex = getRegionIndex(i, j);
       inp.removeAttribute('aria-readonly');
       inp.removeAttribute('aria-disabled');
       inp.removeAttribute('data-prefilled');
-      inp.classList.remove('prefilled', 'hinted', 'incorrect');
+      inp.classList.remove('prefilled', 'hinted', 'incorrect', 'conflict');
       if (val !== 0) {
         inp.value = val;
         inp.disabled = true;
@@ -211,6 +277,7 @@ function renderPuzzle(puz) {
       }
     }
   }
+  clearConflictHighlighting();
 }
 
 function getSelectedDifficulty() {
@@ -233,15 +300,7 @@ async function newGame() {
 async function checkSolution() {
   const boardDiv = document.getElementById('sudoku-board');
   const inputs = boardDiv.getElementsByTagName('input');
-  const board = [];
-  for (let i = 0; i < SIZE; i++) {
-    board[i] = [];
-    for (let j = 0; j < SIZE; j++) {
-      const idx = i * SIZE + j;
-      const val = inputs[idx].value;
-      board[i][j] = val ? parseInt(val, 10) : 0;
-    }
-  }
+  const board = getBoardFromInputs();
   const res = await fetch('/check', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -291,15 +350,7 @@ function updateHintCount(count) {
 async function requestHint() {
   const boardDiv = document.getElementById('sudoku-board');
   const inputs = boardDiv.getElementsByTagName('input');
-  const board = [];
-  for (let i = 0; i < SIZE; i++) {
-    board[i] = [];
-    for (let j = 0; j < SIZE; j++) {
-      const idx = i * SIZE + j;
-      const val = inputs[idx].value;
-      board[i][j] = val ? parseInt(val, 10) : 0;
-    }
-  }
+  const board = getBoardFromInputs();
 
   const res = await fetch('/hint', {
     method: 'POST',
@@ -323,12 +374,11 @@ async function requestHint() {
   inp.setAttribute('aria-disabled', 'true');
   inp.dataset.prefilled = 'true';
   inp.className = 'sudoku-cell';
-  if ((Math.floor(row / 3) + Math.floor(col / 3)) % 2 === 0) {
-    inp.classList.add('block-alt');
-  }
+  inp.dataset.regionIndex = getRegionIndex(row, col);
   inp.classList.add('prefilled', 'hinted');
   hintsUsed = data.hints;
   updateHintCount(hintsUsed);
+  clearConflictHighlighting();
   msg.classList.remove('error', 'success', 'info');
   msg.classList.add('info');
   msg.textContent = 'Hint applied to one empty cell.';
